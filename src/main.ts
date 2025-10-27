@@ -1,0 +1,43 @@
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { createProxyMiddleware } from 'http-proxy-middleware';
+import { ConfigService } from '@nestjs/config';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  const config = app.get(ConfigService);
+
+  const hrm_api_host = config.get('HRM_API_HOST', 'Hrm-api');
+  const hrm_api_port = config.get('HRM_API_PORT');
+  const hrm_notify_host = config.get('HRM_NOTIFY_HOST', 'Hrm-notify')
+  const hrm_notify_port = config.get('HRM_NOTIFY_PORT');
+  app.enableCors({
+    origin: ['http://localhost:3000'],
+    credentials: true,
+  });
+  // Proxy cho hrm-api service
+  app.use(
+    '/hrm-api',
+    createProxyMiddleware({
+      target: `http://${hrm_api_host}:${hrm_api_port}`,
+      // target: `http://localhost:${hrm_api_port}`,
+      changeOrigin: true,
+      ws: true, //using with web-socket
+      pathRewrite: { '^/hrm-api': '' }, //xóa prefix /hrm-api
+    }),
+  );
+  // Proxy cho hrm-notify service
+  app.use(
+    '/hrm-notify',
+    createProxyMiddleware({
+      target: `http://${hrm_notify_host}:${hrm_notify_port}`,
+      // target: `http://localhost:${hrm_notify_port}`,
+      changeOrigin: true,
+      ws: true, //using with web-socket
+      pathRewrite: { '^/hrm-notify': '' }, // xóa prefix /hrm-notify
+    }),
+  );
+  await app.listen(config.get('PORT', 3100));
+}
+bootstrap();
+ 
