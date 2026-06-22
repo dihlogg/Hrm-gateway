@@ -16,7 +16,7 @@ async function bootstrap() {
   const hrm_social_host = config.get('HRM_SOCIAL_HOST', 'Hrm-social');
   const hrm_social_port = config.get('HRM_SOCIAL_PORT');
   app.enableCors({
-    origin: ['http://localhost:3000', 'https://hrm-tool.vercel.app'],
+    origin: ['http://localhost:3000', 'https://hrm-tool.vercel.app', 'https://ltdhrm.me', 'https://www.ltdhrm.me'],
     credentials: true,
   });
   // Proxy cho hrm-api service
