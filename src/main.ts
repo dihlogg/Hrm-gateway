@@ -16,7 +16,7 @@ async function bootstrap() {
   const hrm_social_host = config.get('HRM_SOCIAL_HOST', 'Hrm-social');
   const hrm_social_port = config.get('HRM_SOCIAL_PORT');
   app.enableCors({
-    origin: ['http://localhost:3000'],
+    origin: ['http://localhost:3000', 'https://hrm-tool.vercel.app'],
     credentials: true,
   });
   // Proxy cho hrm-api service
@@ -28,6 +28,7 @@ async function bootstrap() {
       changeOrigin: true,
       ws: true, //using with web-socket
       pathRewrite: { '^/hrm-api': '' }, //xóa prefix /hrm-api
+      logger: console,
     }),
   );
   // Proxy cho hrm-notify service
@@ -39,6 +40,7 @@ async function bootstrap() {
       changeOrigin: true,
       ws: true, //using with web-socket
       pathRewrite: { '^/hrm-notify': '' }, // xóa prefix /hrm-notify
+      logger: console,
     }),
   );
   // Proxy cho hrm-ats service
@@ -49,6 +51,7 @@ async function bootstrap() {
       changeOrigin: true,
       ws: true, //using with web-socket
       pathRewrite: { '^/hrm-ats': '' }, // xóa prefix /hrm-ats
+      logger: console,
     }),
   );
   // Proxy cho hrm-social service
@@ -59,6 +62,7 @@ async function bootstrap() {
       changeOrigin: true,
       ws: true, //using with web-socket
       pathRewrite: { '^/hrm-social': '' }, // xóa prefix /hrm-social
+      logger: console,
     }),
   );
   await app.listen(config.get('PORT', 3100));
