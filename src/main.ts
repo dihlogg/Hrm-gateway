@@ -11,6 +11,10 @@ async function bootstrap() {
   const hrm_api_port = config.get('HRM_API_PORT');
   const hrm_notify_host = config.get('HRM_NOTIFY_HOST', 'Hrm-notify')
   const hrm_notify_port = config.get('HRM_NOTIFY_PORT');
+  const hrm_ats_host = config.get('HRM_ATS_HOST', 'Hrm-ats');
+  const hrm_ats_port = config.get('HRM_ATS_PORT');
+  const hrm_social_host = config.get('HRM_SOCIAL_HOST', 'Hrm-social');
+  const hrm_social_port = config.get('HRM_SOCIAL_PORT');
   app.enableCors({
     origin: ['http://localhost:3000'],
     credentials: true,
@@ -37,7 +41,26 @@ async function bootstrap() {
       pathRewrite: { '^/hrm-notify': '' }, // xóa prefix /hrm-notify
     }),
   );
+  // Proxy cho hrm-ats service
+  app.use(
+    '/hrm-ats',
+    createProxyMiddleware({
+      target: `http://${hrm_ats_host}:${hrm_ats_port}`,
+      changeOrigin: true,
+      ws: true, //using with web-socket
+      pathRewrite: { '^/hrm-ats': '' }, // xóa prefix /hrm-ats
+    }),
+  );
+  // Proxy cho hrm-social service
+  app.use(
+    '/hrm-social',
+    createProxyMiddleware({
+      target: `http://${hrm_social_host}:${hrm_social_port}`,
+      changeOrigin: true,
+      ws: true, //using with web-socket
+      pathRewrite: { '^/hrm-social': '' }, // xóa prefix /hrm-social
+    }),
+  );
   await app.listen(config.get('PORT', 3100));
 }
 bootstrap();
- 
