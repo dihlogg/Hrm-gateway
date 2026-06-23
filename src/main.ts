@@ -51,6 +51,14 @@ async function bootstrap() {
     logger: console,
   });
 
+  // Dedicated WebSocket Proxy (No pathRewrite, No changeOrigin) to prevent "Invalid frame header"
+  const notifyWsProxy = createProxyMiddleware({
+    target: `http://${hrm_notify_host}:${hrm_notify_port}`,
+    changeOrigin: false,
+    ws: true,
+    logger: console,
+  });
+
   app.use('/hrm-api', apiProxy);
   app.use('/hrm-notify', notifyProxy);
   app.use('/hrm-ats', atsProxy);
@@ -62,13 +70,7 @@ async function bootstrap() {
   server.on('upgrade', (req, socket, head) => {
     if (req.url.startsWith('/hrm-notify')) {
       req.url = req.url.replace(/^\/hrm-notify/, '');
-      notifyProxy.upgrade(req, socket, head);
-    } else if (req.url.startsWith('/hrm-api')) {
-      apiProxy.upgrade(req, socket, head);
-    } else if (req.url.startsWith('/hrm-ats')) {
-      atsProxy.upgrade(req, socket, head);
-    } else if (req.url.startsWith('/hrm-social')) {
-      socialProxy.upgrade(req, socket, head);
+      notifyWsProxy.upgrade(req, socket, head);
     }
   });
 }
