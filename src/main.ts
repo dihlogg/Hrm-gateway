@@ -61,6 +61,7 @@ async function bootstrap() {
   // Bind upgrade events for WebSockets
   server.on('upgrade', (req, socket, head) => {
     if (req.url.startsWith('/hrm-notify')) {
+      req.url = req.url.replace(/^\/hrm-notify/, '');
       notifyProxy.upgrade(req, socket, head);
     } else if (req.url.startsWith('/hrm-api')) {
       apiProxy.upgrade(req, socket, head);
