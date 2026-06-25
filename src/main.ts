@@ -63,6 +63,15 @@ async function bootstrap() {
     target: `http://minio:9000`,
     changeOrigin: true,
     pathRewrite: { '^/s3-minio': '' },
+    on: {
+      proxyReq: (proxyReq) => {
+        proxyReq.removeHeader('x-forwarded-host');
+        proxyReq.removeHeader('x-forwarded-proto');
+        proxyReq.removeHeader('x-forwarded-for');
+        proxyReq.removeHeader('x-forwarded-port');
+        proxyReq.setHeader('host', 'minio:9000');
+      }
+    },
     logger: console,
   });
 
@@ -73,7 +82,7 @@ async function bootstrap() {
   app.use('/s3-minio', s3MinioProxy);
 
   const server = await app.listen(config.get('PORT', 3100));
-  
+
   // Bind upgrade events for WebSockets
   server.on('upgrade', (req, socket, head) => {
     if (req.url.startsWith('/hrm-notify')) {
