@@ -61,7 +61,7 @@ async function bootstrap() {
 
   const s3MinioProxy = createProxyMiddleware({
     target: `http://minio:9000`,
-    changeOrigin: true,
+    changeOrigin: false,
     logger: console,
   });
 
