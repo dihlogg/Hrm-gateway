@@ -62,26 +62,19 @@ async function bootstrap() {
   const s3MinioProxy = createProxyMiddleware({
     target: `http://minio:9000`,
     changeOrigin: true,
-    pathRewrite: { '^/s3-minio': '' },
     logger: console,
   });
 
   app.use('/hrm-api', apiProxy);
   app.use('/hrm-notify', notifyProxy);
+  
+  // BẮT BUỘC ĐỂ TRƯỚC /hrm-ats
+  // Mọi request tới https://api.ltdhrm.me/hrm-ats/cvs/... sẽ nhảy thẳng vào MinIO
+  // Nguyên bản đường dẫn /hrm-ats/cvs/... được giữ nguyên, đảm bảo chữ ký khớp 100%!
+  app.use('/hrm-ats/cvs', s3MinioProxy); 
+  
   app.use('/hrm-ats', atsProxy);
   app.use('/hrm-social', socialProxy);
-  
-  // Dùng middleware bọc trước s3MinioProxy để lột sạch các nhãn dán X-Forwarded của Nginx
-  // Tránh việc sửa proxyReq gây treo stream (ECONNRESET/504 Timeout)
-  app.use('/s3-minio', (req: any, res: any, next: any) => {
-    delete req.headers['x-forwarded-host'];
-    delete req.headers['x-forwarded-proto'];
-    delete req.headers['x-forwarded-for'];
-    delete req.headers['x-forwarded-port'];
-    // Xóa luôn header Host gốc để http-proxy-middleware tự động gán Host: minio:9000 (nhờ changeOrigin: true)
-    delete req.headers['host'];
-    next();
-  }, s3MinioProxy);
 
   const server = await app.listen(config.get('PORT', 3100));
 
