@@ -59,10 +59,18 @@ async function bootstrap() {
     logger: console,
   });
 
+  const s3MinioProxy = createProxyMiddleware({
+    target: `http://minio:9000`,
+    changeOrigin: true,
+    pathRewrite: { '^/s3-minio': '' },
+    logger: console,
+  });
+
   app.use('/hrm-api', apiProxy);
   app.use('/hrm-notify', notifyProxy);
   app.use('/hrm-ats', atsProxy);
   app.use('/hrm-social', socialProxy);
+  app.use('/s3-minio', s3MinioProxy);
 
   const server = await app.listen(config.get('PORT', 3100));
   
