@@ -63,15 +63,6 @@ async function bootstrap() {
     target: `http://minio:9000`,
     changeOrigin: true,
     pathRewrite: { '^/s3-minio': '' },
-    on: {
-      proxyReq: (proxyReq) => {
-        proxyReq.removeHeader('x-forwarded-host');
-        proxyReq.removeHeader('x-forwarded-proto');
-        proxyReq.removeHeader('x-forwarded-for');
-        proxyReq.removeHeader('x-forwarded-port');
-        proxyReq.setHeader('host', 'minio:9000');
-      }
-    },
     logger: console,
   });
 
@@ -79,7 +70,18 @@ async function bootstrap() {
   app.use('/hrm-notify', notifyProxy);
   app.use('/hrm-ats', atsProxy);
   app.use('/hrm-social', socialProxy);
-  app.use('/s3-minio', s3MinioProxy);
+  
+  // Dùng middleware bọc trước s3MinioProxy để lột sạch các nhãn dán X-Forwarded của Nginx
+  // Tránh việc sửa proxyReq gây treo stream (ECONNRESET/504 Timeout)
+  app.use('/s3-minio', (req: any, res: any, next: any) => {
+    delete req.headers['x-forwarded-host'];
+    delete req.headers['x-forwarded-proto'];
+    delete req.headers['x-forwarded-for'];
+    delete req.headers['x-forwarded-port'];
+    // Xóa luôn header Host gốc để http-proxy-middleware tự động gán Host: minio:9000 (nhờ changeOrigin: true)
+    delete req.headers['host'];
+    next();
+  }, s3MinioProxy);
 
   const server = await app.listen(config.get('PORT', 3100));
 
