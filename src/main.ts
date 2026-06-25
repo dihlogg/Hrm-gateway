@@ -67,7 +67,6 @@ async function bootstrap() {
   const s3MinioProxy = createProxyMiddleware({
     target: `http://minio:9000`,
     changeOrigin: true,
-    pathRewrite: { '^/hrm-ats/cvs': '/hrm-ats' }, // Rewrite /hrm-ats/cvs to /hrm-ats bucket path
     logger: console,
   });
 
