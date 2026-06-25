@@ -67,22 +67,23 @@ async function bootstrap() {
   const s3MinioProxy = createProxyMiddleware({
     target: `http://minio:9000`,
     changeOrigin: false,
+    timeout: 10 * 60 * 1000,
+    proxyTimeout: 10 * 60 * 1000,
     logger: console,
   });
 
   app.use('/hrm-api', apiProxy);
   app.use('/hrm-notify', notifyProxy);
 
-  // Must be mounted before /hrm-ats. Presigned S3 URLs are signed with
-  // the public host, so keep the original Host header when proxying to MinIO.
-  app.use(
-    '/hrm-ats/cvs',
-    (req: any, res: any, next: any) => {
+  // Must run before /hrm-ats. Presigned S3 URLs are signed with the public
+  // host and full path, so keep the original Host header and req.url intact.
+  app.use((req: any, res: any, next: any) => {
+    if (req.url.startsWith('/hrm-ats/cvs/')) {
       delete req.headers['x-forwarded-host'];
-      next();
-    },
-    s3MinioProxy,
-  );
+      return s3MinioProxy(req, res, next);
+    }
+    return next();
+  });
 
   app.use('/hrm-ats', atsProxy);
   app.use('/hrm-social', socialProxy);
