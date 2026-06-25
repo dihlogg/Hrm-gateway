@@ -61,7 +61,7 @@ async function bootstrap() {
 
   const s3MinioProxy = createProxyMiddleware({
     target: `http://minio:9000`,
-    changeOrigin: false,
+    changeOrigin: true, // BẮT BUỘC để đổi Host thành minio:9000
     logger: console,
   });
 
@@ -69,9 +69,11 @@ async function bootstrap() {
   app.use('/hrm-notify', notifyProxy);
   
   // BẮT BUỘC ĐỂ TRƯỚC /hrm-ats
-  // Mọi request tới https://api.ltdhrm.me/hrm-ats/cvs/... sẽ nhảy thẳng vào MinIO
-  // Nguyên bản đường dẫn /hrm-ats/cvs/... được giữ nguyên, đảm bảo chữ ký khớp 100%!
-  app.use('/hrm-ats/cvs', s3MinioProxy); 
+  // Lột bỏ x-forwarded-host do Nginx cài vào, để MinIO kiểm tra chữ ký với host là minio:9000
+  app.use('/hrm-ats/cvs', (req: any, res: any, next: any) => {
+    delete req.headers['x-forwarded-host'];
+    next();
+  }, s3MinioProxy); 
   
   app.use('/hrm-ats', atsProxy);
   app.use('/hrm-social', socialProxy);
