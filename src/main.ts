@@ -66,15 +66,15 @@ async function bootstrap() {
 
   const s3MinioProxy = createProxyMiddleware({
     target: `http://minio:9000`,
-    changeOrigin: true,
+    changeOrigin: false,
     logger: console,
   });
 
   app.use('/hrm-api', apiProxy);
   app.use('/hrm-notify', notifyProxy);
 
-  // BẮT BUỘC ĐỂ TRƯỚC /hrm-ats
-  // Lột bỏ x-forwarded-host do Nginx cài vào, để MinIO kiểm tra chữ ký với host là minio:9000
+  // Must be mounted before /hrm-ats. Presigned S3 URLs are signed with
+  // the public host, so keep the original Host header when proxying to MinIO.
   app.use(
     '/hrm-ats/cvs',
     (req: any, res: any, next: any) => {
