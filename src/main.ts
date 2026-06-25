@@ -9,14 +9,19 @@ async function bootstrap() {
 
   const hrm_api_host = config.get('HRM_API_HOST', 'Hrm-api');
   const hrm_api_port = config.get('HRM_API_PORT');
-  const hrm_notify_host = config.get('HRM_NOTIFY_HOST', 'Hrm-notify')
+  const hrm_notify_host = config.get('HRM_NOTIFY_HOST', 'Hrm-notify');
   const hrm_notify_port = config.get('HRM_NOTIFY_PORT');
   const hrm_ats_host = config.get('HRM_ATS_HOST', 'Hrm-ats');
   const hrm_ats_port = config.get('HRM_ATS_PORT');
   const hrm_social_host = config.get('HRM_SOCIAL_HOST', 'Hrm-social');
   const hrm_social_port = config.get('HRM_SOCIAL_PORT');
   app.enableCors({
-    origin: ['http://localhost:3000', 'https://hrm-tool.vercel.app', 'https://ltdhrm.me', 'https://www.ltdhrm.me'],
+    origin: [
+      'http://localhost:3000',
+      'https://hrm-tool.vercel.app',
+      'https://ltdhrm.me',
+      'https://www.ltdhrm.me',
+    ],
     credentials: true,
   });
   const apiProxy = createProxyMiddleware({
@@ -61,20 +66,25 @@ async function bootstrap() {
 
   const s3MinioProxy = createProxyMiddleware({
     target: `http://minio:9000`,
-    changeOrigin: true, // BẮT BUỘC để đổi Host thành minio:9000
+    changeOrigin: true,
+    pathRewrite: { '^/hrm-ats/cvs': '/hrm-ats' }, // Rewrite /hrm-ats/cvs to /hrm-ats bucket path
     logger: console,
   });
 
   app.use('/hrm-api', apiProxy);
   app.use('/hrm-notify', notifyProxy);
-  
+
   // BẮT BUỘC ĐỂ TRƯỚC /hrm-ats
   // Lột bỏ x-forwarded-host do Nginx cài vào, để MinIO kiểm tra chữ ký với host là minio:9000
-  app.use('/hrm-ats/cvs', (req: any, res: any, next: any) => {
-    delete req.headers['x-forwarded-host'];
-    next();
-  }, s3MinioProxy); 
-  
+  app.use(
+    '/hrm-ats/cvs',
+    (req: any, res: any, next: any) => {
+      delete req.headers['x-forwarded-host'];
+      next();
+    },
+    s3MinioProxy,
+  );
+
   app.use('/hrm-ats', atsProxy);
   app.use('/hrm-social', socialProxy);
 
